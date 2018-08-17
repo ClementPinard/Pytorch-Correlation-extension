@@ -1,4 +1,3 @@
-import torch
 from torch import nn
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
@@ -14,6 +13,29 @@ def spatial_correlation_sample(input1,
                                stride=1,
                                padding=0,
                                dilation_patch=1):
+    """Apply spatial correlation sampling on from input1 to input2,
+
+    Every parameter except input1 and input2 can be either single int
+    or a pair of int. For more information about Spatial Correlation
+    Sampling, see this page.
+    https://lmb.informatik.uni-freiburg.de/Publications/2015/DFIB15/
+
+    Args:
+        input1 : The first parameter.
+        input2 : The second parameter.
+        kernel_size : total size of your correlation kernel, in pixels
+        patch_size : total size of your patch, determining how many
+            different shifts will be applied
+        stride : stride of the spatial sampler, will modify output
+            height and width
+        padding : padding applied to input1 and input2 before applying
+            the correlation sampling, will modify output height and width
+        dilation_patch : step for every shift in patch
+
+    Returns:
+        Tensor: Result of correlation sampling
+
+    """
     corr_func = SpatialCorrelationSamplerFunction(kernel_size,
                                                   patch_size,
                                                   stride,

@@ -1,18 +1,18 @@
 from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
-from path import Path
+from os.path import join
 
-project_root = Path('Correlation_Module')
-sources = [str(project_root/file) for file in ['correlation.cpp',
-                                               'correlation_sampler.cpp',
-                                               'correlation_cuda_kernel.cu']]
+project_root = 'Correlation_Module'
+sources = [join(project_root, file) for file in ['correlation.cpp',
+                                                 'correlation_sampler.cpp',
+                                                 'correlation_cuda_kernel.cu']]
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
     name='spatial_correlation_sampler',
-    version="0.0.4",
+    version="0.0.5",
     author="Clément Pinard",
     author_email="clement.pinard@ensta-paristech.fr",
     description="Correlation module for pytorch",
@@ -26,7 +26,8 @@ setup(
                       extra_compile_args={'cxx': ['-fopenmp'], 'nvcc':[]},
                       extra_link_args=['-lgomp'])
     ],
-    packages=[str(project_root/'spatial_correlation_sampler')],
+    package_dir={'': project_root},
+    packages=['spatial_correlation_sampler'],
     cmdclass={
         'build_ext': BuildExtension
     },
