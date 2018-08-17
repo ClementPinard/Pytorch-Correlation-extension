@@ -4,13 +4,19 @@ this is a custom C++/Cuda implementation of Correlation module, used e.g. in [Fl
 
 This [tutorial](http://pytorch.org/tutorials/advanced/cpp_extension.html) was used as a basis for implementation.
 
-- Build C++ and CUDA extensions by going into the `Correlation_Module/` folder and executing `python setup.py install`,
+- Build and Install C++ and CUDA extensions by executing `python setup.py install`,
 - Benchmark C++ vs. CUDA by running `python benchmark.py {cpu, cuda}`,
 - Run gradient checks on the code by running `python grad_check.py --backend {cpu, cuda}`.
 
 # Requirements
 
 This module is expected to compile for Pytorch `0.4.1`, on `Python > 3.5` and `Python 2.7`.
+
+# Installation
+
+this module is available on pip
+
+`pip install spatial-correlation-sampler`
 
 # Benchmark
 
