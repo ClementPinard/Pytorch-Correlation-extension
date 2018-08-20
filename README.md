@@ -33,13 +33,15 @@ this module is available on pip
  | -------------- | ---------------------- | ------- | -------- | ---------: | ---------: |
  |           ours |                default | 980 GTX |  forward |  24.912 ms |  25.202 ms |
  |           ours |                default | 980 GTX | backward | 148.341 ms | 148.827 ms |
- |         NVIDIA |                default | 980 GTX |  forward |  80.743 ms |  81.534 ms |
- |         NVIDIA |                default | 980 GTX | backward | 423.968 ms | 425.396 ms |
+ |         NVIDIA |                default | 980 GTX |  forward |  23.680 ms |  23.797 ms |
+ |         NVIDIA |                default | 980 GTX | backward | 118.519 ms | 119.367 ms |
  |                |                        |         |          |            |            |
- |           ours |               FlowNetC | 980 GTX |  forward |   6.888 ms |   7.578 ms |
- |           ours |               FlowNetC | 980 GTX | backward |  28.558 ms |  28.984 ms |
+ |           ours |               FlowNetC | 980 GTX |  forward |  10.132 ms |  10.273 ms |
+ |           ours |               FlowNetC | 980 GTX | backward | 116.646 ms | 117.131 ms |
  |         NVIDIA |               FlowNetC | 980 GTX |  forward |   8.640 ms |   8.805 ms |
  |         NVIDIA |               FlowNetC | 980 GTX | backward |  75.757 ms |  76.873 ms |
+ 
+ There is still room for optimization, stay tuned on this !
 
 ## CPU Benchmark
 
