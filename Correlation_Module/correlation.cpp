@@ -62,8 +62,8 @@ static void correlate_patch_grad(
           if WITHIN_BOUNDS(j1, j2, iW, iW){
             scalar_t v1 = input1[c][i1][j1];
             scalar_t v2 = input2[c][i2][j2];
-            gradInput2[c][i1][j1] += gradOutput * v1;
-            gradInput1[c][i2][j2] += gradOutput * v2;
+            gradInput2[c][i2][j2] += gradOutput * v1;
+            gradInput1[c][i1][j1] += gradOutput * v2;
           }
         }
       }
