@@ -6,14 +6,14 @@ from spatial_correlation_sampler import SpatialCorrelationSamplerFunction
 
 parser = argparse.ArgumentParser()
 parser.add_argument('backend', choices=['cpu', 'cuda'], default='cuda')
-parser.add_argument('-b', '--batch-size', type=int, default=1)
+parser.add_argument('-b', '--batch-size', type=int, default=2)
 parser.add_argument('-k', '--kernel-size', type=int, default=3)
-parser.add_argument('--patch', type=int, default=1)
-parser.add_argument('--patch_dilation', type=int, default=1)
-parser.add_argument('-c', '--channel', type=int, default=10)
+parser.add_argument('--patch', type=int, default=3)
+parser.add_argument('--patch_dilation', type=int, default=2)
+parser.add_argument('-c', '--channel', type=int, default=2)
 parser.add_argument('--height', type=int, default=10)
 parser.add_argument('-w', '--width', type=int, default=10)
-parser.add_argument('-s', '--stride', type=int, default=1)
+parser.add_argument('-s', '--stride', type=int, default=2)
 parser.add_argument('-p', '--pad', type=int, default=1)
 
 args = parser.parse_args()
@@ -26,6 +26,7 @@ input2 = torch.randn(args.batch_size,
                      args.channel,
                      args.height,
                      args.width).double().to(torch.device(args.backend))
+
 input1.requires_grad = True
 input2.requires_grad = True
 

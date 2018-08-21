@@ -36,8 +36,8 @@ this module is available on pip
  |         NVIDIA |                default | 980 GTX |  forward |  23.680 ms |  23.797 ms |
  |         NVIDIA |                default | 980 GTX | backward | 118.519 ms | 119.367 ms |
  |                |                        |         |          |            |            |
- |           ours |               FlowNetC | 980 GTX |  forward |  10.132 ms |  10.273 ms |
- |           ours |               FlowNetC | 980 GTX | backward | 116.646 ms | 117.131 ms |
+ |           ours |               FlowNetC | 980 GTX |  forward |  10.094 ms |  10.241 ms |
+ |           ours |               FlowNetC | 980 GTX | backward |  89.983 ms |  90.410 ms |
  |         NVIDIA |               FlowNetC | 980 GTX |  forward |   8.640 ms |   8.805 ms |
  |         NVIDIA |               FlowNetC | 980 GTX | backward |  75.757 ms |  76.873 ms |
  
