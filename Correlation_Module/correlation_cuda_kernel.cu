@@ -36,9 +36,9 @@ __global__ void correlation_cuda_forward_kernel(
     int dilation_patchH, int dilation_patchW,
     int dH, int dW) {
   
-  const int C = rInput1.getSize(3);
   const int iH = rInput1.getSize(1);
   const int iW = rInput1.getSize(2);
+  const int C = rInput1.getSize(3);
 
   const int n = blockIdx.x;
   const int h = blockIdx.y;
@@ -61,7 +61,7 @@ __global__ void correlation_cuda_forward_kernel(
       for (int i=0; i<kH; ++i){
         int i1 = start_i + i;
         int i2 = i1 + ph_dilated;
-        if WITHIN_BOUNDS(i1, i2, iH, iW){
+        if WITHIN_BOUNDS(i1, i2, iH, iH){
           for (int j=0; j<kW; ++j){
             int j1 = start_j + j;
             int j2 = j1 + pw_dilated;
@@ -69,7 +69,7 @@ __global__ void correlation_cuda_forward_kernel(
               for (int c=thread; c<C; c += THREADS_FORWARD){
                 scalar_t v1 = rInput1[n][i1][j1][c];
                 scalar_t v2 = rInput2[n][i2][j2][c];
-                prod_sum[threadIdx.x] += v1 * v2;
+                prod_sum[thread] += v1 * v2;
               }
             }
           }
