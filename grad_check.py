@@ -1,6 +1,6 @@
 import argparse
 import torch
-
+#torch.set_printoptions(precision=1, threshold=10000)
 from torch.autograd import gradcheck
 from spatial_correlation_sampler import SpatialCorrelationSamplerFunction
 
@@ -18,11 +18,11 @@ parser.add_argument('-p', '--pad', type=int, default=1)
 
 args = parser.parse_args()
 
-input1 = torch.randn(args.batch_size,
+input1 = torch.ones(args.batch_size,
                      args.channel,
                      args.height,
                      args.width).double().to(torch.device(args.backend))
-input2 = torch.randn(args.batch_size,
+input2 = torch.ones(args.batch_size,
                      args.channel,
                      args.height,
                      args.width).double().to(torch.device(args.backend))

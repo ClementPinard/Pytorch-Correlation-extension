@@ -14,11 +14,11 @@ parser.add_argument('backend', choices=['cpu', 'cuda'], default='cuda')
 parser.add_argument('-b', '--batch-size', type=int, default=16)
 parser.add_argument('-k', '--kernel-size', type=int, default=3)
 parser.add_argument('--patch', type=int, default=3)
-parser.add_argument('--patch_dilation', type=int, default=1)
+parser.add_argument('--patch_dilation', type=int, default=2)
 parser.add_argument('-c', '--channel', type=int, default=64)
 parser.add_argument('--height', type=int, default=100)
 parser.add_argument('-w', '--width', type=int, default=100)
-parser.add_argument('-s', '--stride', type=int, default=1)
+parser.add_argument('-s', '--stride', type=int, default=2)
 parser.add_argument('-p', '--pad', type=int, default=1)
 parser.add_argument('--scale', choices=['s','ms','us'], default='us')
 parser.add_argument('-r', '--runs', type=int, default=100)
@@ -45,6 +45,7 @@ correlation_sampler = SpatialCorrelationSampler(
 
 # Force CUDA initialization
 output = correlation_sampler(input1, input2)
+print(output.size())
 output.mean().backward()
 forward_min = float('inf')
 forward_time = 0
