@@ -12,7 +12,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='spatial_correlation_sampler',
-    version="0.0.6",
+    version="0.0.7",
     author="Clément Pinard",
     author_email="clement.pinard@ensta-paristech.fr",
     description="Correlation module for pytorch",
