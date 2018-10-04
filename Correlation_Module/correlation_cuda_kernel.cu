@@ -244,21 +244,16 @@ at::Tensor correlation_cuda_forward(
   const int batch_size = input1.size(0);
   const int iH = input1.size(2);
   const int iW = input1.size(3);
-  const at::IntList output_size = {
-    batch_size,
-    patchH,
-    patchW,
-    (iH + 2 * padH - kH) / dH + 1,
-    (iW + 2 * padW - kW) / dW + 1
-  };
 
-  auto output = at::zeros(output_size, input1.options());
+  const auto oH = (iH + 2 * padH - kH) / dH + 1;
+  const auto oW = (iW + 2 * padW - kW) / dW + 1;
+  auto output = at::zeros({batch_size, patchH, patchW, oH, oW}, input1.options());
   
   auto trInput1 = input1.permute({0, 2, 3, 1}).contiguous();
   auto trInput2 = input2.permute({0, 2, 3, 1}).contiguous();
   
   const int threads = THREADS_FORWARD;
-  const dim3 blocks(batch_size, output_size[3], output_size[4]);
+  const dim3 blocks(batch_size, oH, oW);
 
   using namespace at;
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(input1.type(), "correlation_forward_cuda", ([&] {
