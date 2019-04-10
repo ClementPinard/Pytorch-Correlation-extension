@@ -1,44 +1,39 @@
+#include <torch/extension.h>
 #include <ATen/ATen.h>
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include <THC/THC.h>
-#include <THC/THCDeviceTensor.cuh>
-
-
 #include <vector>
 #include <iostream>
 
-#define dTensor4R THCDeviceTensor<scalar_t, 4, size_t, RestrictPtrTraits>
-#define dTensor5R THCDeviceTensor<scalar_t, 5, size_t, RestrictPtrTraits>
+// Cuda tensor accessor definitions
+// restrict pointer traits piroritize speed over memory consumption
+#define TensorAcc4R PackedTensorAccessor<scalar_t,4,RestrictPtrTraits>
+#define TensorAcc5R PackedTensorAccessor<scalar_t,5,RestrictPtrTraits>
 #define WITHIN_BOUNDS(x, y, H, W) (x >= 0 && x < H && y >= 0 && y < W)
 
 #define THREADS_FORWARD 32
 #define THREADS_BACKWARD 5
 
-template <typename scalar_t, int dims>
-THCDeviceTensor<scalar_t, dims, size_t, RestrictPtrTraits>
-toDeviceTensor(at::Tensor t) {
-  return THCDeviceTensor<scalar_t, dims, size_t, RestrictPtrTraits>
-  (t.data<scalar_t>(), (size_t*) t.sizes().data(), (size_t*) t.strides().data());
-}
+using namespace at;
+
 
 namespace {
 template <typename scalar_t>
 __global__ void correlation_cuda_forward_kernel(
-    const dTensor4R rInput1,
-    const dTensor4R rInput2,
-    dTensor5R output,
+    const TensorAcc4R rInput1,
+    const TensorAcc4R rInput2,
+    TensorAcc5R output,
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
     int dilation_patchH, int dilation_patchW,
     int dH, int dW) {
   
-  const int iH = rInput1.getSize(1);
-  const int iW = rInput1.getSize(2);
-  const int C = rInput1.getSize(3);
+  const int iH = rInput1.size(1);
+  const int iW = rInput1.size(2);
+  const int C = rInput1.size(3);
 
   const int n = blockIdx.x;
   const int h = blockIdx.y;
@@ -91,20 +86,20 @@ __global__ void correlation_cuda_forward_kernel(
 
 template <typename scalar_t>
 __global__ void correlation_cuda_backward_kernel_input1(
-    const dTensor5R gradOutput,
-    const dTensor4R input2,
-    dTensor4R gradInput1,
+    const TensorAcc5R gradOutput,
+    const TensorAcc4R input2,
+    TensorAcc4R gradInput1,
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
     int dilation_patchH, int dilation_patchW,
     int dH, int dW,
     int batch) {
-  const int iH = input2.getSize(2);
-  const int iW = input2.getSize(3);
+  const int iH = input2.size(2);
+  const int iW = input2.size(3);
 
-  const int H = gradOutput.getSize(3);
-  const int W = gradOutput.getSize(4);
+  const int H = gradOutput.size(3);
+  const int W = gradOutput.size(4);
 
   const int patchRadH = (patchH - 1) / 2;
   const int patchRadW = (patchW - 1) / 2;
@@ -163,23 +158,23 @@ __global__ void correlation_cuda_backward_kernel_input1(
 
 template <typename scalar_t>
 __global__ void correlation_cuda_backward_kernel_input2(
-    const dTensor5R gradOutput,
-    const dTensor4R input1,
-    dTensor4R gradInput2,
+    const TensorAcc5R gradOutput,
+    const TensorAcc4R input1,
+    TensorAcc4R gradInput2,
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
     int dilation_patchH, int dilation_patchW,
     int dH, int dW,
     int batch) {
-  const int iH = input1.getSize(2);
-  const int iW = input1.getSize(3);
+  const int iH = input1.size(2);
+  const int iW = input1.size(3);
 
   const int patchRadH = (patchH - 1) / 2;
   const int patchRadW = (patchW - 1) / 2;
 
-  const int H = gradOutput.getSize(3);
-  const int W = gradOutput.getSize(4);
+  const int H = gradOutput.size(3);
+  const int W = gradOutput.size(4);
   
   const int n = batch;
   const int c = blockIdx.x;
@@ -257,10 +252,11 @@ at::Tensor correlation_cuda_forward(
 
   using namespace at;
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(input1.type(), "correlation_forward_cuda", ([&] {
+    TensorAcc4R trInput1_acc  = trInput1.packed_accessor<scalar_t, 4, RestrictPtrTraits>();
+    TensorAcc4R trInput2_acc = trInput2.packed_accessor<scalar_t, 4, RestrictPtrTraits>();
+    TensorAcc5R output_acc = output.packed_accessor<scalar_t, 5, RestrictPtrTraits>();
     correlation_cuda_forward_kernel<scalar_t><<<blocks, threads>>>(
-        toDeviceTensor<scalar_t,4>(trInput1),
-        toDeviceTensor<scalar_t,4>(trInput2),
-        toDeviceTensor<scalar_t,5>(output),
+        trInput1_acc, trInput2_acc, output_acc,
         kH, kW, patchH, patchW, padH, padW,
         dilation_patchH, dilation_patchW, dH, dW);
   }));
@@ -290,11 +286,16 @@ std::vector<at::Tensor> correlation_cuda_backward(
   const dim3 threads(THREADS_BACKWARD, THREADS_BACKWARD);
 
   AT_DISPATCH_FLOATING_TYPES(input1.type(), "correlation_backward_cuda", ([&] {
+    TensorAcc4R input1_acc = input1.packed_accessor<scalar_t, 4, RestrictPtrTraits>();
+    TensorAcc4R input2_acc = input2.packed_accessor<scalar_t, 4, RestrictPtrTraits>();
+    TensorAcc4R gradInput1_acc = gradInput1.packed_accessor<scalar_t, 4, RestrictPtrTraits>();
+    TensorAcc4R gradInput2_acc = gradInput2.packed_accessor<scalar_t, 4, RestrictPtrTraits>();
+    TensorAcc5R gradOutput_acc = gradOutput.packed_accessor<scalar_t, 5, RestrictPtrTraits>();
+
+
     for (int n = 0; n < batch_size; ++n){
       correlation_cuda_backward_kernel_input1<scalar_t><<<blocks, threads>>>(
-          toDeviceTensor<scalar_t,5>(gradOutput),
-          toDeviceTensor<scalar_t,4>(input2),
-          toDeviceTensor<scalar_t,4>(gradInput1),
+          gradOutput_acc, input2_acc, gradInput1_acc,
           kH, kW, patchH, patchW, padH, padW,
           dilation_patchH, dilation_patchW, dH, dW,
           n);
@@ -302,9 +303,7 @@ std::vector<at::Tensor> correlation_cuda_backward(
 
     for (int n = 0; n < batch_size; ++n){
       correlation_cuda_backward_kernel_input2<scalar_t><<<blocks, threads>>>(
-          toDeviceTensor<scalar_t,5>(gradOutput),
-          toDeviceTensor<scalar_t,4>(input1),
-          toDeviceTensor<scalar_t,4>(gradInput2),
+          gradOutput_acc, input1_acc, gradInput2_acc,
           kH, kW, patchH, patchW, padH, padW,
           dilation_patchH, dilation_patchW, dH, dW,
           n);

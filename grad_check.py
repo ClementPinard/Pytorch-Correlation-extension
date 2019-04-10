@@ -1,8 +1,8 @@
 import argparse
 import torch
-#torch.set_printoptions(precision=1, threshold=10000)
+# torch.set_printoptions(precision=1, threshold=10000)
 from torch.autograd import gradcheck
-from spatial_correlation_sampler import SpatialCorrelationSamplerFunction
+from spatial_correlation_sampler import SpatialCorrelationSampler
 
 parser = argparse.ArgumentParser()
 parser.add_argument('backend', choices=['cpu', 'cuda'], default='cuda')
@@ -19,23 +19,26 @@ parser.add_argument('-p', '--pad', type=int, default=1)
 args = parser.parse_args()
 
 input1 = torch.ones(args.batch_size,
-                     args.channel,
-                     args.height,
-                     args.width).double().to(torch.device(args.backend))
+                    args.channel,
+                    args.height,
+                    args.width,
+                    dtype=torch.float64,
+                    device=torch.device(args.backend))
 input2 = torch.ones(args.batch_size,
-                     args.channel,
-                     args.height,
-                     args.width).double().to(torch.device(args.backend))
+                    args.channel,
+                    args.height,
+                    args.width,
+                    dtype=torch.float64,
+                    device=torch.device(args.backend))
 
 input1.requires_grad = True
 input2.requires_grad = True
 
-correlation_sampler = SpatialCorrelationSamplerFunction(
-    args.kernel_size,
-    args.patch,
-    args.stride,
-    args.pad,
-    args.patch_dilation)
+correlation_sampler = SpatialCorrelationSampler(args.kernel_size,
+                                                args.patch,
+                                                args.stride,
+                                                args.pad,
+                                                args.patch_dilation)
 
 
 if gradcheck(correlation_sampler, [input1, input2]):
