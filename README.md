@@ -23,6 +23,12 @@ this module is available on pip
 
 `pip install spatial-correlation-sampler`
 
+# Known Problems
+
+This module needs compatible gcc version and CUDA to be compiled.
+Namely, CUDA 9.1 and below will need gcc5, while CUDA 9.2 and 10.0 will need gcc7
+See [this issue](https://github.com/ClementPinard/Pytorch-Correlation-extension/issues/1) for more information
+
 # Usage
 
 API has a few difference with NVIDIA's module
