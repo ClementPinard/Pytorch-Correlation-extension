@@ -6,6 +6,7 @@ import time
 
 import torch
 from spatial_correlation_sampler import SpatialCorrelationSampler
+from tqdm import trange
 
 TIME_SCALES = {'s': 1, 'ms': 1000, 'us': 1000000}
 
@@ -22,19 +23,21 @@ parser.add_argument('-s', '--stride', type=int, default=2)
 parser.add_argument('-p', '--pad', type=int, default=1)
 parser.add_argument('--scale', choices=['s','ms','us'], default='us')
 parser.add_argument('-r', '--runs', type=int, default=100)
+parser.add_argument('-d', '--double', action='store_true', help='if selected, will use float64')
 
 args = parser.parse_args()
+
+device = torch.device(args.backend)
+dtype = torch.float64 if args.double else torch.float32
 
 input1 = torch.randn(args.batch_size,
                      args.channel,
                      args.height,
-                     args.width).to(torch.device(args.backend))
-input2 = torch.randn(args.batch_size,
-                     args.channel,
-                     args.height,
-                     args.width).to(torch.device(args.backend))
-input1.requires_grad = True
-input2.requires_grad = True
+                     args.width,
+                     dtype=dtype,
+                     device=device,
+                     requires_grad=True)
+input2 = torch.randn_like(input1)
 
 correlation_sampler = SpatialCorrelationSampler(
     args.kernel_size,
@@ -51,7 +54,7 @@ forward_min = float('inf')
 forward_time = 0
 backward_min = float('inf')
 backward_time = 0
-for _ in range(args.runs):
+for _ in trange(args.runs):
     correlation_sampler.zero_grad()
 
     start = time.time()
@@ -59,6 +62,7 @@ for _ in range(args.runs):
     elapsed = time.time() - start
     forward_min = min(forward_min, elapsed)
     forward_time += elapsed
+    output = output.mean()
 
     start = time.time()
     (output.mean()).backward()

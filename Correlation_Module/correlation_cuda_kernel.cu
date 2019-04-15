@@ -1,5 +1,6 @@
 #include <torch/extension.h>
 #include <ATen/ATen.h>
+using namespace at;
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -9,14 +10,12 @@
 
 // Cuda tensor accessor definitions
 // restrict pointer traits piroritize speed over memory consumption
-#define TensorAcc4R PackedTensorAccessor<scalar_t,4,RestrictPtrTraits>
-#define TensorAcc5R PackedTensorAccessor<scalar_t,5,RestrictPtrTraits>
+#define TensorAcc4R PackedTensorAccessor<scalar_t,4,RestrictPtrTraits,int32_t>
+#define TensorAcc5R PackedTensorAccessor<scalar_t,5,RestrictPtrTraits,int32_t>
 #define WITHIN_BOUNDS(x, y, H, W) (x >= 0 && x < H && y >= 0 && y < W)
 
 #define THREADS_FORWARD 32
 #define THREADS_BACKWARD 5
-
-using namespace at;
 
 
 namespace {
@@ -227,9 +226,9 @@ __global__ void correlation_cuda_backward_kernel_input2(
 }
 }
 
-at::Tensor correlation_cuda_forward(
-    at::Tensor input1,
-    at::Tensor input2,
+torch::Tensor correlation_cuda_forward(
+    torch::Tensor input1,
+    torch::Tensor input2,
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
@@ -242,7 +241,7 @@ at::Tensor correlation_cuda_forward(
 
   const auto oH = (iH + 2 * padH - kH) / dH + 1;
   const auto oW = (iW + 2 * padW - kW) / dW + 1;
-  auto output = at::zeros({batch_size, patchH, patchW, oH, oW}, input1.options());
+  auto output = torch::zeros({batch_size, patchH, patchW, oH, oW}, input1.options());
   
   auto trInput1 = input1.permute({0, 2, 3, 1}).contiguous();
   auto trInput2 = input2.permute({0, 2, 3, 1}).contiguous();
@@ -250,11 +249,10 @@ at::Tensor correlation_cuda_forward(
   const int threads = THREADS_FORWARD;
   const dim3 blocks(batch_size, oH, oW);
 
-  using namespace at;
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input1.type(), "correlation_forward_cuda", ([&] {
-    TensorAcc4R trInput1_acc  = trInput1.packed_accessor<scalar_t, 4, RestrictPtrTraits>();
-    TensorAcc4R trInput2_acc = trInput2.packed_accessor<scalar_t, 4, RestrictPtrTraits>();
-    TensorAcc5R output_acc = output.packed_accessor<scalar_t, 5, RestrictPtrTraits>();
+  AT_DISPATCH_FLOATING_TYPES(input1.type(), "correlation_forward_cuda", ([&] {
+    TensorAcc4R trInput1_acc  = trInput1.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+    TensorAcc4R trInput2_acc = trInput2.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+    TensorAcc5R output_acc = output.packed_accessor<scalar_t,5,RestrictPtrTraits,int32_t>();
     correlation_cuda_forward_kernel<scalar_t><<<blocks, threads>>>(
         trInput1_acc, trInput2_acc, output_acc,
         kH, kW, patchH, patchW, padH, padW,
@@ -264,18 +262,18 @@ at::Tensor correlation_cuda_forward(
   return output;
 }
 
-std::vector<at::Tensor> correlation_cuda_backward(
-    at::Tensor input1,
-    at::Tensor input2,
-    at::Tensor gradOutput,
+std::vector<torch::Tensor> correlation_cuda_backward(
+    torch::Tensor input1,
+    torch::Tensor input2,
+    torch::Tensor gradOutput,
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
     int dilation_patchH, int dilation_patchW,
     int dH, int dW) {
   
-  auto gradInput1 = at::zeros_like(input1);
-  auto gradInput2 = at::zeros_like(input2);
+  auto gradInput1 = torch::zeros_like(input1);
+  auto gradInput2 = torch::zeros_like(input2);
 
   const int batch_size = input1.size(0);
   const int iH = input1.size(2);
@@ -286,11 +284,11 @@ std::vector<at::Tensor> correlation_cuda_backward(
   const dim3 threads(THREADS_BACKWARD, THREADS_BACKWARD);
 
   AT_DISPATCH_FLOATING_TYPES(input1.type(), "correlation_backward_cuda", ([&] {
-    TensorAcc4R input1_acc = input1.packed_accessor<scalar_t, 4, RestrictPtrTraits>();
-    TensorAcc4R input2_acc = input2.packed_accessor<scalar_t, 4, RestrictPtrTraits>();
-    TensorAcc4R gradInput1_acc = gradInput1.packed_accessor<scalar_t, 4, RestrictPtrTraits>();
-    TensorAcc4R gradInput2_acc = gradInput2.packed_accessor<scalar_t, 4, RestrictPtrTraits>();
-    TensorAcc5R gradOutput_acc = gradOutput.packed_accessor<scalar_t, 5, RestrictPtrTraits>();
+    TensorAcc4R input1_acc = input1.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+    TensorAcc4R input2_acc = input2.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+    TensorAcc4R gradInput1_acc = gradInput1.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+    TensorAcc4R gradInput2_acc = gradInput2.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+    TensorAcc5R gradOutput_acc = gradOutput.packed_accessor<scalar_t,5,RestrictPtrTraits,int32_t>();
 
 
     for (int n = 0; n < batch_size; ++n){

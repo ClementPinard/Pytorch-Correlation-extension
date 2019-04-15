@@ -1,42 +1,43 @@
 #include <torch/extension.h>
+#include <ATen/ATen.h>
 
 #include <vector>
 #include <iostream>
 
 // declarations
 
-at::Tensor correlation_cuda_forward(
-    at::Tensor input1,
-    at::Tensor input2,
+torch::Tensor correlation_cuda_forward(
+    torch::Tensor input1,
+    torch::Tensor input2,
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
     int dilation_patchH, int dilation_patchW,
     int dH, int dW);
 
-at::Tensor correlation_cpp_forward(
-    at::Tensor input1,
-    at::Tensor input2,
+torch::Tensor correlation_cpp_forward(
+    torch::Tensor input1,
+    torch::Tensor input2,
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
     int dilation_patchH, int dilation_patchW,
     int dH, int dW);
 
-std::vector<at::Tensor> correlation_cuda_backward(
-    at::Tensor grad_output,
-    at::Tensor input1,
-    at::Tensor input2,
+std::vector<torch::Tensor> correlation_cuda_backward(
+    torch::Tensor grad_output,
+    torch::Tensor input1,
+    torch::Tensor input2,
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
     int dilation_patchH, int dilation_patchW,
     int dH, int dW);
 
-std::vector<at::Tensor> correlation_cpp_backward(
-    at::Tensor grad_output,
-    at::Tensor input1,
-    at::Tensor input2,
+std::vector<torch::Tensor> correlation_cpp_backward(
+    torch::Tensor grad_output,
+    torch::Tensor input1,
+    torch::Tensor input2,
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
@@ -49,9 +50,9 @@ std::vector<at::Tensor> correlation_cpp_backward(
 #define CHECK_CONTIGUOUS(x) AT_CHECK(x.is_contiguous(), #x, " must be contiguous")
 #define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
 
-at::Tensor correlation_sample_forward(
-    at::Tensor input1,
-    at::Tensor input2,
+torch::Tensor correlation_sample_forward(
+    torch::Tensor input1,
+    torch::Tensor input2,
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
@@ -73,10 +74,10 @@ at::Tensor correlation_sample_forward(
   }
 }
 
-std::vector<at::Tensor> correlation_sample_backward(
-    at::Tensor input1,
-    at::Tensor input2,
-    at::Tensor grad_output,
+std::vector<torch::Tensor> correlation_sample_backward(
+    torch::Tensor input1,
+    torch::Tensor input2,
+    torch::Tensor grad_output,
     size_t kH, size_t kW,
     size_t patchH, size_t patchW,
     size_t padH, size_t padW,

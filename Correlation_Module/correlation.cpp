@@ -71,9 +71,9 @@ static void correlate_patch_grad(
   }
 }
 
-at::Tensor correlation_cpp_forward(
-    at::Tensor input1,
-    at::Tensor input2,
+torch::Tensor correlation_cpp_forward(
+    torch::Tensor input1,
+    torch::Tensor input2,
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
@@ -95,7 +95,7 @@ at::Tensor correlation_cpp_forward(
     for (n = 0; n < batch_size; ++n) {
       for(ph = 0; ph < patchH; ++ph){
         for(pw = 0; pw < patchW; ++pw){
-          AT_DISPATCH_FLOATING_TYPES(input1.type(), "correlation_forward_cpp", ([&] {
+          AT_DISPATCH_FLOATING_TYPES(input1.scalar_type(), "correlation_forward_cpp", ([&] {
             auto input1_acc = input1.accessor<scalar_t, 4>();
             auto input2_acc = input2.accessor<scalar_t, 4>();
             auto output_acc = output.accessor<scalar_t, 5>();
@@ -118,10 +118,10 @@ at::Tensor correlation_cpp_forward(
   return output;
 }
 
-std::vector<at::Tensor> correlation_cpp_backward(
-    at::Tensor input1,
-    at::Tensor input2,
-    at::Tensor gradOutput,
+std::vector<torch::Tensor> correlation_cpp_backward(
+    torch::Tensor input1,
+    torch::Tensor input2,
+    torch::Tensor gradOutput,
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
@@ -134,14 +134,14 @@ std::vector<at::Tensor> correlation_cpp_backward(
   const int oH = gradOutput.size(3);
   const int oW = gradOutput.size(4);
   
-  auto gradInput1 = at::zeros_like(input1);
+  auto gradInput1 = torch::zeros_like(input1);
 
-  auto gradInput2 = at::zeros_like(input2);
+  auto gradInput2 = torch::zeros_like(input2);
 
   int n, ph, pw, h, w;
   #pragma omp parallel for private(n, ph, pw, h, w)
     for (n = 0; n < batch_size; ++n) {
-      AT_DISPATCH_FLOATING_TYPES(input1.type(), "correlation_forward_cpp", ([&] {
+      AT_DISPATCH_FLOATING_TYPES(input1.scalar_type(), "correlation_forward_cpp", ([&] {
         auto input1_acc = input1.accessor<scalar_t, 4>();
         auto gradInput1_acc = gradInput1.accessor<scalar_t, 4>();
         auto input2_acc = input2.accessor<scalar_t, 4>();
