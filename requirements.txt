@@ -1,2 +1,2 @@
-torch
+torch>=1.0.1
 numpy

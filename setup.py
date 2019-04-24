@@ -12,14 +12,14 @@ with open("README.md", "r") as fh:
 
 setup(
     name='spatial_correlation_sampler',
-    version="0.0.8",
+    version="0.1.0",
     author="Clément Pinard",
     author_email="clement.pinard@ensta-paristech.fr",
     description="Correlation module for pytorch",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/ClementPinard/Pytorch-Correlation-extension",
-    install_requires=['torch>=0.4.1','numpy'],
+    install_requires=['torch>=1.0.1','numpy'],
     ext_modules=[
         CUDAExtension('spatial_correlation_sampler_backend',
                       sources,
