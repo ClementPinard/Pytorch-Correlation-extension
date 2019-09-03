@@ -15,13 +15,17 @@ This [tutorial](http://pytorch.org/tutorials/advanced/cpp_extension.html) was us
 
 # Requirements
 
-This module is expected to compile for Pytorch `1.0.1`, on `Python > 3.5` and `Python 2.7`.
+This module is expected to compile for Pytorch `1.2`, on `Python > 3.5` and `Python 2.7`.
 
 # Installation
 
 this module is available on pip
 
 `pip install spatial-correlation-sampler`
+
+For a cpu-only version, you can install from source with
+
+`python setup_cpu.py install`
 
 # Known Problems
 

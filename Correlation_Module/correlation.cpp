@@ -1,6 +1,5 @@
 #include <torch/extension.h>
-#include <ATen/ATen.h>
-using namespace at;
+using namespace torch;
 
 #include <vector>
 

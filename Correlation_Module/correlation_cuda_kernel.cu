@@ -1,6 +1,5 @@
-#include <torch/extension.h>
-#include <ATen/ATen.h>
-using namespace at;
+#include <torch/types.h>
+using namespace torch;
 
 #include <cuda.h>
 #include <cuda_runtime.h>

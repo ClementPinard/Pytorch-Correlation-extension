@@ -21,7 +21,7 @@ parser.add_argument('--height', type=int, default=100)
 parser.add_argument('-w', '--width', type=int, default=100)
 parser.add_argument('-s', '--stride', type=int, default=2)
 parser.add_argument('-p', '--pad', type=int, default=1)
-parser.add_argument('--scale', choices=['s','ms','us'], default='us')
+parser.add_argument('--scale', choices=['s', 'ms', 'us'], default='us')
 parser.add_argument('-r', '--runs', type=int, default=100)
 parser.add_argument('-d', '--double', action='store_true', help='if selected, will use float64')
 

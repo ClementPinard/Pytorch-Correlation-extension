@@ -36,36 +36,29 @@ def spatial_correlation_sample(input1,
         Tensor: Result of correlation sampling
 
     """
-    corr_func = SpatialCorrelationSamplerFunction(kernel_size,
-                                                  patch_size,
-                                                  stride,
-                                                  padding,
-                                                  dilation_patch)
-    return corr_func(input1, input2)
+    return SpatialCorrelationSamplerFunction.apply(input1, input2,
+                                                   kernel_size, patch_size,
+                                                   stride, padding, dilation_patch)
 
 
 class SpatialCorrelationSamplerFunction(Function):
-    def __init__(self,
-                 kernel_size,
-                 patch_size,
-                 stride,
-                 padding,
-                 dilation_patch):
-        super(SpatialCorrelationSamplerFunction, self).__init__()
-        self.kernel_size = _pair(kernel_size)
-        self.patch_size = _pair(patch_size)
-        self.stride = _pair(stride)
-        self.padding = _pair(padding)
-        self.dilation_patch = _pair(dilation_patch)
 
-    def forward(self, input1, input2):
+    @staticmethod
+    def forward(ctx,
+                input1,
+                input2,
+                kernel_size=1,
+                patch_size=1,
+                stride=1,
+                padding=0,
+                dilation_patch=1):
 
-        self.save_for_backward(input1, input2)
-        kH, kW = self.kernel_size
-        patchH, patchW = self.patch_size
-        padH, padW = self.padding
-        dilation_patchH, dilation_patchW = self.dilation_patch
-        dH, dW = self.stride
+        ctx.save_for_backward(input1, input2)
+        kH, kW = ctx.kernel_size = _pair(kernel_size)
+        patchH, patchW = ctx.patch_size = _pair(patch_size)
+        padH, padW = ctx.padding = _pair(padding)
+        dilation_patchH, dilation_patchW = ctx.dilation_patch = _pair(dilation_patch)
+        dH, dW = ctx.stride = _pair(stride)
 
         output = correlation.forward(input1, input2,
                                      kH, kW, patchH, patchW,
@@ -74,22 +67,23 @@ class SpatialCorrelationSamplerFunction(Function):
 
         return output
 
+    @staticmethod
     @once_differentiable
-    def backward(self, grad_output):
-        input1, input2 = self.saved_variables
+    def backward(ctx, grad_output):
+        input1, input2 = ctx.saved_variables
 
-        kH, kW = self.kernel_size
-        patchH, patchW = self.patch_size
-        padH, padW = self.padding
-        dilation_patchH, dilation_patchW = self.dilation_patch
-        dH, dW = self.stride
+        kH, kW = ctx.kernel_size
+        patchH, patchW = ctx.patch_size
+        padH, padW = ctx.padding
+        dilation_patchH, dilation_patchW = ctx.dilation_patch
+        dH, dW = ctx.stride
 
         grad_input1, grad_input2 = correlation.backward(input1, input2, grad_output,
                                                         kH, kW, patchH, patchW,
                                                         padH, padW,
                                                         dilation_patchH, dilation_patchW,
                                                         dH, dW)
-        return grad_input1, grad_input2
+        return grad_input1, grad_input2, None, None, None, None, None
 
 
 class SpatialCorrelationSampler(nn.Module):
@@ -103,6 +97,6 @@ class SpatialCorrelationSampler(nn.Module):
         self.dilation_patch = dilation_patch
 
     def forward(self, input1, input2):
-        return spatial_correlation_sample(input1, input2, self.kernel_size,
-                                          self.patch_size, self.stride,
-                                          self.padding, self.dilation_patch)
+        return SpatialCorrelationSamplerFunction.apply(input1, input2, self.kernel_size,
+                                                       self.patch_size, self.stride,
+                                                       self.padding, self.dilation_patch)
