@@ -23,12 +23,19 @@ parser.add_argument('-s', '--stride', type=int, default=2)
 parser.add_argument('-p', '--pad', type=int, default=1)
 parser.add_argument('--scale', choices=['s', 'ms', 'us'], default='us')
 parser.add_argument('-r', '--runs', type=int, default=100)
-parser.add_argument('-d', '--double', action='store_true', help='if selected, will use float64')
+parser.add_argument('-d', '--dtype', choices=['half', 'float', 'double'])
 
 args = parser.parse_args()
 
 device = torch.device(args.backend)
-dtype = torch.float64 if args.double else torch.float32
+
+if args.dtype == 'half':
+    dtype = torch.float16
+elif args.dtype == 'float':
+    dtype = torch.float32
+else:
+    dtype = torch.float64
+
 
 input1 = torch.randn(args.batch_size,
                      args.channel,
