@@ -56,6 +56,7 @@ class SpatialCorrelationSamplerFunction(Function):
         ctx.save_for_backward(input1, input2)
         kH, kW = ctx.kernel_size = _pair(kernel_size)
         patchH, patchW = ctx.patch_size = _pair(patch_size)
+        #patchH, patchW = ctx.patch_size = patch_size
         padH, padW = ctx.padding = _pair(padding)
         dilation_patchH, dilation_patchW = ctx.dilation_patch = _pair(dilation_patch)
         dH, dW = ctx.stride = _pair(stride)
