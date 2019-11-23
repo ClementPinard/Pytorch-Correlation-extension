@@ -277,31 +277,32 @@ std::vector<torch::Tensor> correlation_cuda_backward(
   const dim3 blocks(C, iH, iW);
   const dim3 threads(THREADS_BACKWARD, THREADS_BACKWARD);
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input1.scalar_type(), "correlation_backward_cuda", ([&] {
-    TensorAcc4R input1_acc = input1.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
-    TensorAcc4R input2_acc = input2.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
-    TensorAcc4R gradInput1_acc = gradInput1.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
-    TensorAcc4R gradInput2_acc = gradInput2.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
-    TensorAcc5R gradOutput_acc = gradOutput.packed_accessor<scalar_t,6,RestrictPtrTraits,int32_t>();
-//    TensorAcc5R gradOutput_acc = gradOutput.packed_accessor<scalar_t,5,RestrictPtrTraits,int32_t>();
-
-
-    for (int n = 0; n < batch_size; ++n){
-      correlation_cuda_backward_kernel_input1<scalar_t><<<blocks, threads>>>(
-          gradOutput_acc, input2_acc, gradInput1_acc,
-          kH, kW, patchH, patchW, padH, padW,
-          dilation_patchH, dilation_patchW, dH, dW,
-          n);
-    }
-
-    for (int n = 0; n < batch_size; ++n){
-      correlation_cuda_backward_kernel_input2<scalar_t><<<blocks, threads>>>(
-          gradOutput_acc, input1_acc, gradInput2_acc,
-          kH, kW, patchH, patchW, padH, padW,
-          dilation_patchH, dilation_patchW, dH, dW,
-          n);
-    }
-  }));
+//  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input1.scalar_type(), "correlation_backward_cuda", ([&] {
+//    TensorAcc4R input1_acc = input1.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+//    TensorAcc4R input2_acc = input2.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+//    TensorAcc4R gradInput1_acc = gradInput1.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+//    TensorAcc4R gradInput2_acc = gradInput2.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+//    TensorAcc5R gradOutput_acc = gradOutput.packed_accessor<scalar_t,6,RestrictPtrTraits,int32_t>();
+////    TensorAcc5R gradOutput_acc = gradOutput.packed_accessor<scalar_t,5,RestrictPtrTraits,int32_t>();
+//
+//
+//    for (int n = 0; n < batch_size; ++n){
+//      correlation_cuda_backward_kernel_input1<scalar_t><<<blocks, threads>>>(
+//          gradOutput_acc, input2_acc, gradInput1_acc,
+//          kH, kW, patchH, patchW, padH, padW,
+//          dilation_patchH, dilation_patchW, dH, dW,
+//          n);
+//    }
+//
+//    for (int n = 0; n < batch_size; ++n){
+//      correlation_cuda_backward_kernel_input2<scalar_t><<<blocks, threads>>>(
+//          gradOutput_acc, input1_acc, gradInput2_acc,
+//          kH, kW, patchH, patchW, padH, padW,
+//          dilation_patchH, dilation_patchW, dH, dW,
+//          n);
+//    }
+//  }
+//));
 
   return {gradInput1, gradInput2};
 }
