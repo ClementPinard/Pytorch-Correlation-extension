@@ -1,6 +1,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/spatial-correlation-sampler.svg)](https://pypi.org/project/spatial-correlation-sampler/)
 
+** Modified to support feature-wise correlation. Only forward is supported. **
 
 # Pytorch Correlation module
 
