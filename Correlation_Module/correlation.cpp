@@ -3,7 +3,7 @@ using namespace torch;
 
 #include <vector>
 
-#define WITHIN_BOUNDS(x, y, H, W) (x >= 0 && x < W && y >= 0 && y < H)
+#define WITHIN_BOUNDS(x, y, H, W) (x >= 0 && x < H && y >= 0 && y < W)
 
 template <typename scalar_t>
 static void correlate_patch(
