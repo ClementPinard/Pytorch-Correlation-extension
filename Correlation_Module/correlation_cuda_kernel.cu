@@ -29,7 +29,7 @@ __global__ void correlation_cuda_forward_kernel(
     int padH, int padW,
     int dilation_patchH, int dilation_patchW,
     int dH, int dW) {
-  
+
   const int iH = rInput1.size(2);
   const int iW = rInput1.size(3);
   const int C = rInput1.size(1);
@@ -72,7 +72,7 @@ __global__ void correlation_cuda_forward_kernel(
 
 template <typename scalar_t>
 __global__ void correlation_cuda_backward_kernel_input1(
-    const TensorAcc5R gradOutput,
+    const TensorAcc6R gradOutput,
     const TensorAcc4R input2,
     TensorAcc4R gradInput1,
     int kH, int kW,
@@ -84,9 +84,8 @@ __global__ void correlation_cuda_backward_kernel_input1(
   const int iH = input2.size(2);
   const int iW = input2.size(3);
 
-  const int H = gradOutput.size(3);
-  const int W = gradOutput.size(4);
-
+  const int H = gradOutput.size(4);
+  const int W = gradOutput.size(5);
   const int patchRadH = (patchH - 1) / 2;
   const int patchRadW = (patchW - 1) / 2;
   
@@ -120,7 +119,7 @@ __global__ void correlation_cuda_backward_kernel_input1(
           for(int tmp2 = w_off, j = 0; tmp2 < kW; tmp2 += dW, ++j) {
             int j2 = start_j2 - j;
             if WITHIN_BOUNDS(i2, j2, H, W) {
-              prod_sum[ph_off][pw_off] += gradOutput[n][ph][pw][i2][j2] * val;
+              prod_sum[ph_off][pw_off] += gradOutput[n][c][pw][ph][i2][j2] * val;
             }
           }
         }
@@ -144,7 +143,7 @@ __global__ void correlation_cuda_backward_kernel_input1(
 
 template <typename scalar_t>
 __global__ void correlation_cuda_backward_kernel_input2(
-    const TensorAcc5R gradOutput,
+    const TensorAcc6R gradOutput,
     const TensorAcc4R input1,
     TensorAcc4R gradInput2,
     int kH, int kW,
@@ -159,8 +158,8 @@ __global__ void correlation_cuda_backward_kernel_input2(
   const int patchRadH = (patchH - 1) / 2;
   const int patchRadW = (patchW - 1) / 2;
 
-  const int H = gradOutput.size(3);
-  const int W = gradOutput.size(4);
+  const int H = gradOutput.size(4);
+  const int W = gradOutput.size(5);
   
   const int n = batch;
   const int c = blockIdx.x;
@@ -191,7 +190,7 @@ __global__ void correlation_cuda_backward_kernel_input2(
           for(int tmp2 = w_off, j = 0; tmp2 < kW; tmp2 += dW, ++j) {
             int j2 = start_j2 - j;
             if WITHIN_BOUNDS(i2, j2, H, W) {
-              prod_sum[ph_off][pw_off] += gradOutput[n][ph][pw][i2][j2] * val;
+              prod_sum[ph_off][pw_off] += gradOutput[n][c][pw][ph][i2][j2] * val;
             }
           }
         }
@@ -213,6 +212,7 @@ __global__ void correlation_cuda_backward_kernel_input2(
 }
 }
 
+
 torch::Tensor correlation_cuda_forward(
     torch::Tensor input1,
     torch::Tensor input2,
@@ -221,7 +221,7 @@ torch::Tensor correlation_cuda_forward(
     int padH, int padW,
     int dilation_patchH, int dilation_patchW,
     int dH, int dW) {
-  
+
   const int batch_size = input1.size(0);
   const int nchannel = input1.size(1);
   const int iH = input1.size(2);
@@ -236,7 +236,7 @@ torch::Tensor correlation_cuda_forward(
   //auto output = torch::zeros({batch_size, patchH, patchW, oH, oW}, input1.options());
   //auto trInput1 = input1.permute({0, 2, 3, 1}).contiguous();
   //auto trInput2 = input2.permute({0, 2, 3, 1}).contiguous();
-  
+
   const int threads = THREADS_FORWARD;
   //const dim3 blocks(batch_size, oH, oW);
   const dim3 blocks(batch_size,nchannel,oH);
@@ -277,32 +277,36 @@ std::vector<torch::Tensor> correlation_cuda_backward(
   const dim3 blocks(C, iH, iW);
   const dim3 threads(THREADS_BACKWARD, THREADS_BACKWARD);
 
-//  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input1.scalar_type(), "correlation_backward_cuda", ([&] {
-//    TensorAcc4R input1_acc = input1.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
-//    TensorAcc4R input2_acc = input2.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
-//    TensorAcc4R gradInput1_acc = gradInput1.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
-//    TensorAcc4R gradInput2_acc = gradInput2.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
-//    TensorAcc5R gradOutput_acc = gradOutput.packed_accessor<scalar_t,6,RestrictPtrTraits,int32_t>();
-////    TensorAcc5R gradOutput_acc = gradOutput.packed_accessor<scalar_t,5,RestrictPtrTraits,int32_t>();
-//
-//
-//    for (int n = 0; n < batch_size; ++n){
-//      correlation_cuda_backward_kernel_input1<scalar_t><<<blocks, threads>>>(
-//          gradOutput_acc, input2_acc, gradInput1_acc,
-//          kH, kW, patchH, patchW, padH, padW,
-//          dilation_patchH, dilation_patchW, dH, dW,
-//          n);
-//    }
-//
-//    for (int n = 0; n < batch_size; ++n){
-//      correlation_cuda_backward_kernel_input2<scalar_t><<<blocks, threads>>>(
-//          gradOutput_acc, input1_acc, gradInput2_acc,
-//          kH, kW, patchH, patchW, padH, padW,
-//          dilation_patchH, dilation_patchW, dH, dW,
-//          n);
-//    }
-//  }
-//));
+  auto trInput1 = input1.contiguous();
+  auto trInput2 = input2.contiguous();
+  auto trgradOutput = gradOutput.contiguous();
+
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(trInput1.scalar_type(), "correlation_backward_cuda", ([&] {
+    TensorAcc4R input1_acc = trInput1.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+    TensorAcc4R input2_acc = trInput2.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+    TensorAcc4R gradInput1_acc = gradInput1.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+    TensorAcc4R gradInput2_acc = gradInput2.packed_accessor<scalar_t,4,RestrictPtrTraits,int32_t>();
+    TensorAcc6R gradOutput_acc = trgradOutput.packed_accessor<scalar_t,6,RestrictPtrTraits,int32_t>();
+//    TensorAcc5R gradOutput_acc = gradOutput.packed_accessor<scalar_t,5,RestrictPtrTraits,int32_t>();
+
+
+    for (int n = 0; n < batch_size; ++n){
+      correlation_cuda_backward_kernel_input1<scalar_t><<<blocks, threads>>>(
+          gradOutput_acc, input2_acc, gradInput1_acc,
+          kH, kW, patchH, patchW, padH, padW,
+          dilation_patchH, dilation_patchW, dH, dW,
+          n);
+    }
+
+    for (int n = 0; n < batch_size; ++n){
+      correlation_cuda_backward_kernel_input2<scalar_t><<<blocks, threads>>>(
+          gradOutput_acc, input1_acc, gradInput2_acc,
+          kH, kW, patchH, patchW, padH, padW,
+          dilation_patchH, dilation_patchW, dH, dW,
+          n);
+    }
+  }
+));
 
   return {gradInput1, gradInput2};
 }
