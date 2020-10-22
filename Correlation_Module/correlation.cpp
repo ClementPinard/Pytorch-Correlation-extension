@@ -147,7 +147,7 @@ std::vector<torch::Tensor> correlation_cpp_backward(
   int n, ph, pw, h, w;
   #pragma omp parallel for private(n, ph, pw, h, w)
     for (n = 0; n < batch_size; ++n) {
-      AT_DISPATCH_FLOATING_TYPES(input1.scalar_type(), "correlation_forward_cpp", ([&] {
+      AT_DISPATCH_FLOATING_TYPES(input1.scalar_type(), "correlation_backward_cpp", ([&] {
         auto input1_acc = input1.accessor<scalar_t, 4>();
         auto gradInput1_acc = gradInput1.accessor<scalar_t, 4>();
         auto input2_acc = input2.accessor<scalar_t, 4>();
