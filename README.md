@@ -44,14 +44,58 @@ input (B x C x H x W) -> output (B x PatchH x PatchW x oH x oW)
  * Patch size `patch_size` is now the whole patch, and not only the radii.
  * `stride1` is now `stride` and`stride2` is `dilation_patch`, which behave like dilated convolutions
  * equivalent `max_displacement` is then `dilation_patch * (patch_size - 1) / 2`.
+ * `dilation` is a new parameter, it acts the same way as dilated convolution regarding the correlation kernel
  * to get the right parameters for FlowNetC, you would have
  ```
 kernel_size=1
 patch_size=21,
 stride=1,
 padding=0,
+dilation=1
 dilation_patch=2
  ```
+
+
+## Example
+```python
+import torch
+from spatial_correlation_sampler import SpatialCorrelationSampler, 
+
+device = "cuda"
+batch_size = 1
+channel = 1
+H = 10
+W = 10
+dtype = torch.float32
+
+input1 = torch.randint(1, 4, (batch_size, channel, H, W), dtype=dtype, device=device, requires_grad=True)
+input2 = torch.randint_like(input1, 1, 4).requires_grad_(True)
+
+#You can either use the function or the module. Note that the module doesn't contain any parameter tensor.
+
+#function
+
+out = spatial_correlation_sample(input1,
+	                             input2,
+                                 kernel_size=3,
+                                 patch_size=1,
+                                 stride=2,
+                                 padding=0,
+                                 dilation=2,
+                                 dilation_patch=1)
+
+#module
+
+correlation_sampler = SpatialCorrelationSampler(
+    kernel_size=3,
+    patch_size=1,
+    stride=2,
+    padding=0,
+    dilation=2,
+    dilation_patch=1)
+out = correlation_sampler(input1, input2)
+
+```
 
 # Benchmark
 
@@ -66,7 +110,7 @@ dilation_patch=2
  * FlowNetC correlation parameters where launched with the following command:
  
  ```bash
- CUDA_LAUNCH_BLOCKING=1 python benchmark.py --scale ms -k1 --patch 21 -s1 -p0 --patch_dilation 2 -b4 --height 48 --width 64 -c256 cuda
+ CUDA_LAUNCH_BLOCKING=1 python benchmark.py --scale ms -k1 --patch 21 -s1 -p0 --patch_dilation 2 -b4 --height 48 --width 64 -c256 cuda -d float
  
  CUDA_LAUNCH_BLOCKING=1 python NV_correlation_benchmark.py --scale ms -k1 --patch 21 -s1 -p0 --patch_dilation 2 -b4 --height 48 --width 64 -c256
  ```

@@ -67,6 +67,7 @@ parser.add_argument('-w', '--width', type=int, default=10)
 parser.add_argument('-s', '--stride', type=int, default=2)
 parser.add_argument('-p', '--pad', type=int, default=5)
 parser.add_argument('-v', '--verbose', action='store_true')
+parser.add_argument('-d', '--dilation', type=int, default=2)
 args = parser.parse_args()
 
 assert(torch.cuda.is_available()), "no comparison to make"
@@ -88,6 +89,7 @@ correlation_sampler = SpatialCorrelationSampler(
     args.patch,
     args.stride,
     args.pad,
+    args.dilation,
     args.patch_dilation)
 
 if 'forward' in args.direction:

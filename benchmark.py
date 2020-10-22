@@ -23,6 +23,7 @@ parser.add_argument('-s', '--stride', type=int, default=2)
 parser.add_argument('-p', '--pad', type=int, default=1)
 parser.add_argument('--scale', choices=['s', 'ms', 'us'], default='us')
 parser.add_argument('-r', '--runs', type=int, default=100)
+parser.add_argument('--dilation', type=int, default=2)
 parser.add_argument('-d', '--dtype', choices=['half', 'float', 'double'])
 
 args = parser.parse_args()
@@ -51,6 +52,7 @@ correlation_sampler = SpatialCorrelationSampler(
     args.patch,
     args.stride,
     args.pad,
+    args.dilation,
     args.patch_dilation)
 
 # Force CUDA initialization

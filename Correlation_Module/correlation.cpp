@@ -11,6 +11,7 @@ static void correlate_patch(
     TensorAccessor<scalar_t,3> input2,
     scalar_t *dst,
     int kH, int kW,
+    int dilationH, int dilationW,
     int u, int v,
     int shiftU, int shiftV){
   const int C = input1.size(0);
@@ -18,11 +19,11 @@ static void correlate_patch(
   const int iW = input1.size(2);
   for (int c=0; c<C; ++c){
     for (int i=0; i<kH; ++i){
-      int i1 = u + i;
+      int i1 = u + i * dilationH;
       int i2 = i1 + shiftU;
       if WITHIN_BOUNDS(i1, i2, iH, iH){
         for (int j=0; j<kW; ++j){
-          int j1 = v + j;
+          int j1 = v + j * dilationW;
           int j2 = j1 + shiftV;
           if WITHIN_BOUNDS(j1, j2, iW, iW){
             scalar_t v1 = input1[c][i1][j1];
@@ -43,6 +44,7 @@ static void correlate_patch_grad(
     TensorAccessor<scalar_t,3> gradInput2,
     scalar_t gradOutput,
     int kH, int kW,
+    int dilationH, int dilationW,
     int u, int v,
     int shiftU, int shiftV){
 
@@ -52,11 +54,11 @@ static void correlate_patch_grad(
 
   for (int c=0; c<C; ++c){
     for (int i=0; i<kH; ++i){
-      int i1 = u + i;
+      int i1 = u + i * dilationH;
       int i2 = i1 + shiftU;
       if WITHIN_BOUNDS(i1, i2, iH, iH){
         for (int j=0; j<kW; ++j){
-          int j1 = v + j;
+          int j1 = v + j * dilationW;
           int j2 = j1 + shiftV;
           if WITHIN_BOUNDS(j1, j2, iW, iW){
             scalar_t v1 = input1[c][i1][j1];
@@ -76,6 +78,7 @@ torch::Tensor correlation_cpp_forward(
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
+    int dilationH, int dilationW,
     int dilation_patchH, int dilation_patchW,
     int dH, int dW) {
 
@@ -84,9 +87,11 @@ torch::Tensor correlation_cpp_forward(
   const auto iW = input1.size(3);
   const int patchRadH = (patchH - 1) / 2;
   const int patchRadW = (patchW - 1) / 2;
+  const int dilatedKH = (kH - 1) * dilationH + 1;
+  const int dilatedKW = (kW - 1) * dilationW + 1;
 
-  const auto oH = (iH + 2 * padH - kH) / dH + 1;
-  const auto oW = (iW + 2 * padW - kW) / dW + 1;
+  const auto oH = (iH + 2 * padH - dilatedKH) / dH + 1;
+  const auto oW = (iW + 2 * padW - dilatedKW) / dW + 1;
   auto output = at::zeros({batch_size, patchH, patchW, oH, oW}, input1.options());
 
   int n, ph, pw, h, w;
@@ -104,6 +109,7 @@ torch::Tensor correlation_cpp_forward(
                                 input2_acc[n],
                                 &output_acc[n][ph][pw][h][w],
                                 kH, kW,
+                                dilationH, dilationW,
                                 -padH + h * dH,
                                 -padW + w * dW,
                                 (ph - patchRadH)  * dilation_patchH,
@@ -124,6 +130,7 @@ std::vector<torch::Tensor> correlation_cpp_backward(
     int kH, int kW,
     int patchH, int patchW,
     int padH, int padW,
+    int dilationH, int dilationW,
     int dilation_patchH, int dilation_patchW,
     int dH, int dW) {
   
@@ -155,6 +162,7 @@ std::vector<torch::Tensor> correlation_cpp_backward(
                                      input2_acc[n], gradInput2_acc[n],
                                      gradOutput_acc[n][ph][pw][h][w],
                                      kH, kW,
+                                     dilationH, dilationW,
                                      -padH + h * dH,
                                      -padW + w * dW,
                                      (ph - patchRadH)  * dilation_patchH,

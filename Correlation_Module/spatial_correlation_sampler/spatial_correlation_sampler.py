@@ -12,6 +12,7 @@ def spatial_correlation_sample(input1,
                                patch_size=1,
                                stride=1,
                                padding=0,
+                               dilation=1,
                                dilation_patch=1):
     """Apply spatial correlation sampling on from input1 to input2,
 
@@ -38,7 +39,7 @@ def spatial_correlation_sample(input1,
     """
     return SpatialCorrelationSamplerFunction.apply(input1, input2,
                                                    kernel_size, patch_size,
-                                                   stride, padding, dilation_patch)
+                                                   stride, padding, dilation, dilation_patch)
 
 
 class SpatialCorrelationSamplerFunction(Function):
@@ -51,18 +52,21 @@ class SpatialCorrelationSamplerFunction(Function):
                 patch_size=1,
                 stride=1,
                 padding=0,
+                dilation=1,
                 dilation_patch=1):
 
         ctx.save_for_backward(input1, input2)
         kH, kW = ctx.kernel_size = _pair(kernel_size)
         patchH, patchW = ctx.patch_size = _pair(patch_size)
         padH, padW = ctx.padding = _pair(padding)
+        dilationH, dilationW = ctx.dilation = _pair(dilation)
         dilation_patchH, dilation_patchW = ctx.dilation_patch = _pair(dilation_patch)
         dH, dW = ctx.stride = _pair(stride)
 
         output = correlation.forward(input1, input2,
                                      kH, kW, patchH, patchW,
-                                     padH, padW, dilation_patchH, dilation_patchW,
+                                     padH, padW, dilationH, dilationW,
+                                     dilation_patchH, dilation_patchW,
                                      dH, dW)
 
         return output
@@ -75,15 +79,16 @@ class SpatialCorrelationSamplerFunction(Function):
         kH, kW = ctx.kernel_size
         patchH, patchW = ctx.patch_size
         padH, padW = ctx.padding
+        dilationH, dilationW = ctx.dilation
         dilation_patchH, dilation_patchW = ctx.dilation_patch
         dH, dW = ctx.stride
 
         grad_input1, grad_input2 = correlation.backward(input1, input2, grad_output,
                                                         kH, kW, patchH, patchW,
-                                                        padH, padW,
+                                                        padH, padW, dilationH, dilationW,
                                                         dilation_patchH, dilation_patchW,
                                                         dH, dW)
-        return grad_input1, grad_input2, None, None, None, None, None
+        return grad_input1, grad_input2, None, None, None, None, None, None
 
 
 class SpatialCorrelationSampler(nn.Module):
@@ -99,4 +104,4 @@ class SpatialCorrelationSampler(nn.Module):
     def forward(self, input1, input2):
         return SpatialCorrelationSamplerFunction.apply(input1, input2, self.kernel_size,
                                                        self.patch_size, self.stride,
-                                                       self.padding, self.dilation_patch)
+                                                       self.padding, self.dilation, self.dilation_patch)
