@@ -15,7 +15,7 @@ This [tutorial](http://pytorch.org/tutorials/advanced/cpp_extension.html) was us
 
 # Requirements
 
-This module is expected to compile for Pytorch `1.2`, on `Python > 3.5` and `Python 2.7`.
+This module is expected to compile for Pytorch `1.6`.
 
 # Installation
 
@@ -76,7 +76,7 @@ input2 = torch.randint_like(input1, 1, 4).requires_grad_(True)
 #function
 
 out = spatial_correlation_sample(input1,
-	                             input2,
+	                         input2,
                                  kernel_size=3,
                                  patch_size=1,
                                  stride=2,
