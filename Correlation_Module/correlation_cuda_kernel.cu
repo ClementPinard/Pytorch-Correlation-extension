@@ -17,7 +17,7 @@ using namespace torch;
 #define THREADS_BACKWARD 5
 
 
-namespace {
+namespace corr {
 template <typename scalar_t>
 __global__ void correlation_cuda_forward_kernel(
     const TensorAcc4R rInput1,
@@ -231,7 +231,7 @@ __global__ void correlation_cuda_backward_kernel_input2(
     gradInput2[n][c][h][w] = reduce_sum;
   }
 }
-}
+} // namsepace corr
 
 torch::Tensor correlation_cuda_forward(
     torch::Tensor input1,
@@ -263,7 +263,7 @@ torch::Tensor correlation_cuda_forward(
     TensorAcc4R trInput1_acc  = trInput1.packed_accessor32<scalar_t,4,RestrictPtrTraits>();
     TensorAcc4R trInput2_acc = trInput2.packed_accessor32<scalar_t,4,RestrictPtrTraits>();
     TensorAcc5R output_acc = output.packed_accessor32<scalar_t,5,RestrictPtrTraits>();
-    correlation_cuda_forward_kernel<scalar_t><<<blocks, threads>>>(
+    corr::correlation_cuda_forward_kernel<scalar_t><<<blocks, threads>>>(
         trInput1_acc, trInput2_acc, output_acc,
         kH, kW, patchH, patchW, padH, padW, dilationH, dilationW,
         dilation_patchH, dilation_patchW, dH, dW);
@@ -303,7 +303,7 @@ std::vector<torch::Tensor> correlation_cuda_backward(
 
 
     for (int n = 0; n < batch_size; ++n){
-      correlation_cuda_backward_kernel_input1<scalar_t><<<blocks, threads>>>(
+      corr::correlation_cuda_backward_kernel_input1<scalar_t><<<blocks, threads>>>(
           gradOutput_acc, input2_acc, gradInput1_acc,
           kH, kW, patchH, patchW, padH, padW,
           dilationH, dilationW,
@@ -313,7 +313,7 @@ std::vector<torch::Tensor> correlation_cuda_backward(
     }
 
     for (int n = 0; n < batch_size; ++n){
-      correlation_cuda_backward_kernel_input2<scalar_t><<<blocks, threads>>>(
+      corr::correlation_cuda_backward_kernel_input2<scalar_t><<<blocks, threads>>>(
           gradOutput_acc, input1_acc, gradInput2_acc,
           kH, kW, patchH, patchW, padH, padW,
           dilationH, dilationW,
