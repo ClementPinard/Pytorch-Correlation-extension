@@ -1,5 +1,5 @@
 #include <torch/extension.h>
-
+#include <c10/cuda/CUDAGuard.h>
 #include <vector>
 #include <iostream>
 
@@ -67,7 +67,9 @@ torch::Tensor correlation_sample_forward(
   if (input1.device().is_cuda()){
     CHECK_INPUT(input1);
     CHECK_INPUT(input2);
-    
+    const at::cuda::OptionalCUDAGuard guard_input1(device_of(input1));
+    const at::cuda::OptionalCUDAGuard guard_input2(device_of(input2));
+
     return correlation_cuda_forward(input1, input2, kH, kW, patchH, patchW,
                              padH, padW, dilationH, dilationW,
                              dilation_patchH, dilation_patchW,
@@ -94,6 +96,10 @@ std::vector<torch::Tensor> correlation_sample_backward(
   if(grad_output.device().is_cuda()){
     CHECK_INPUT(input1);
     CHECK_INPUT(input2);
+    const at::cuda::OptionalCUDAGuard guard_input1(device_of(input1));
+    const at::cuda::OptionalCUDAGuard guard_input2(device_of(input2));
+    const at::cuda::OptionalCUDAGuard guard_grad_output(device_of(grad_output));
+
     return correlation_cuda_backward(input1, input2, grad_output,
                               kH, kW, patchH, patchW,
                               padH, padW,
