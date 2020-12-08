@@ -23,7 +23,7 @@ def check_equal(first, second, verbose):
 
 def zero_grad(variables):
     for variable in variables:
-        variable.grad.zero_()
+        if variable.grad is not None: variable.grad.zero_()
 
 
 def get_grads(variables):
@@ -43,6 +43,8 @@ def check_forward(input1, input2, correlation_sampler, verbose, gpu_index=0):
 
 def check_backward(input1, input2, correlation_sampler, verbose, gpu_index=0):
     device = torch.device(f"cuda:{gpu_index}")
+
+    zero_grad([input1, input2])
 
     cpu_values = correlation_sampler(input1, input2)
     cpu_values.sum().backward()
@@ -69,16 +71,6 @@ def check_multi_gpu_backward(correlation_sampler, verbose):
     print("Multi-GPU backward")
     total_gpus = torch.cuda.device_count()
     for gpu in range(total_gpus):
-        input1 = torch.randn(args.batch_size,
-                     args.channel,
-                     args.height,
-                     args.width).double()
-        input2 = torch.randn(args.batch_size,
-                     args.channel,
-                     args.height,
-                     args.width).double()
-        input1.requires_grad = True
-        input2.requires_grad = True
         check_backward(input1, input2, correlation_sampler, verbose, gpu_index=gpu)
 
 
