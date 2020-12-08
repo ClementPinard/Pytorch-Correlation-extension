@@ -1,5 +1,5 @@
 #include <torch/extension.h>
-
+#include <c10/cuda/CUDAGuard.h>
 #include <vector>
 #include <iostream>
 
@@ -31,6 +31,7 @@ std::vector<torch::Tensor> correlation_cpp_backward(
 #define CHECK_CUDA(x) TORCH_CHECK(x.device().is_cuda(), #x, " must be a CUDA tensor")
 #define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x, " must be contiguous")
 #define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
+#define CHECK_SAME_DEVICE(x, y) TORCH_CHECK(x.device() == y.device(), #x " is not on same device as " #y)
 
 torch::Tensor correlation_cuda_forward(
     torch::Tensor input1,
@@ -67,7 +68,12 @@ torch::Tensor correlation_sample_forward(
   if (input1.device().is_cuda()){
     CHECK_INPUT(input1);
     CHECK_INPUT(input2);
-    
+
+    // set device of input1 as default CUDA device
+    // https://pytorch.org/cppdocs/api/structc10_1_1cuda_1_1_optional_c_u_d_a_guard.html
+    const at::cuda::OptionalCUDAGuard guard_input1(device_of(input1));
+    CHECK_SAME_DEVICE(input1, input2);
+
     return correlation_cuda_forward(input1, input2, kH, kW, patchH, patchW,
                              padH, padW, dilationH, dilationW,
                              dilation_patchH, dilation_patchW,
@@ -94,6 +100,12 @@ std::vector<torch::Tensor> correlation_sample_backward(
   if(grad_output.device().is_cuda()){
     CHECK_INPUT(input1);
     CHECK_INPUT(input2);
+
+    // set device of input1 as default CUDA device
+    const at::cuda::OptionalCUDAGuard guard_input1(device_of(input1));
+    CHECK_SAME_DEVICE(input1, input2);
+    CHECK_SAME_DEVICE(input1, grad_output);
+
     return correlation_cuda_backward(input1, input2, grad_output,
                               kH, kW, patchH, patchW,
                               padH, padW,

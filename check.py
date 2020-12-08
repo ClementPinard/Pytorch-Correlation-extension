@@ -23,23 +23,29 @@ def check_equal(first, second, verbose):
 
 def zero_grad(variables):
     for variable in variables:
-        variable.grad.zero_()
+        if variable.grad is not None: variable.grad.zero_()
 
 
 def get_grads(variables):
     return [var.grad.clone() for var in variables]
 
 
-def check_forward(input1, input2, correlation_sampler, verbose):
+def check_forward(input1, input2, correlation_sampler, verbose, gpu_index=0):
+    device = torch.device(f"cuda:{gpu_index}")
+
     cpu_values = correlation_sampler(input1, input2)
     cuda_values = correlation_sampler(input1.to(device), input2.to(device))
 
-    print('Forward: CPU vs. CUDA ... ', end='')
+    print(f"Forward: CPU vs. CUDA device:{gpu_index} ... ", end='')
     check_equal(cpu_values, cuda_values, verbose)
     print('Ok')
 
 
-def check_backward(input1, input2, correlation_sampler, verbose):
+def check_backward(input1, input2, correlation_sampler, verbose, gpu_index=0):
+    device = torch.device(f"cuda:{gpu_index}")
+
+    zero_grad([input1, input2])
+
     cpu_values = correlation_sampler(input1, input2)
     cpu_values.sum().backward()
     grad_cpu = get_grads([input1, input2])
@@ -50,9 +56,22 @@ def check_backward(input1, input2, correlation_sampler, verbose):
     cuda_values.sum().backward()
     grad_cuda = get_grads([input1, input2])
 
-    print('Backward: CPU vs. CUDA ... ', end='')
+    print(f"Backward: CPU vs. CUDA device:{gpu_index} ... ", end='')
     check_equal(grad_cpu, grad_cuda, verbose)
     print('Ok')
+
+
+def check_multi_gpu_forward(correlation_sampler, verbose):
+    print("Multi-GPU forward")
+    total_gpus = torch.cuda.device_count()
+    for gpu in range(total_gpus):
+        check_forward(input1, input2, correlation_sampler, verbose, gpu_index=gpu)
+
+def check_multi_gpu_backward(correlation_sampler, verbose):
+    print("Multi-GPU backward")
+    total_gpus = torch.cuda.device_count()
+    for gpu in range(total_gpus):
+        check_backward(input1, input2, correlation_sampler, verbose, gpu_index=gpu)
 
 
 parser = argparse.ArgumentParser()
@@ -66,13 +85,12 @@ parser.add_argument('--height', type=int, default=10)
 parser.add_argument('-w', '--width', type=int, default=10)
 parser.add_argument('-s', '--stride', type=int, default=2)
 parser.add_argument('-p', '--pad', type=int, default=5)
-parser.add_argument('-v', '--verbose', action='store_true')
+parser.add_argument('-v', '--verbose', action='store_true', default=False)
 parser.add_argument('-d', '--dilation', type=int, default=2)
 args = parser.parse_args()
+print(args)
 
 assert(torch.cuda.is_available()), "no comparison to make"
-device = torch.device("cuda")
-
 input1 = torch.randn(args.batch_size,
                      args.channel,
                      args.height,
@@ -94,6 +112,8 @@ correlation_sampler = SpatialCorrelationSampler(
 
 if 'forward' in args.direction:
     check_forward(input1, input2, correlation_sampler, args.verbose)
+    if torch.cuda.device_count() > 1: check_multi_gpu_forward(correlation_sampler, args.verbose)
 
 if 'backward' in args.direction:
     check_backward(input1, input2, correlation_sampler, args.verbose)
+    if torch.cuda.device_count() > 1: check_multi_gpu_backward(correlation_sampler, args.verbose)
