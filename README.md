@@ -19,6 +19,10 @@ This module is expected to compile for Pytorch `1.6`.
 
 # Installation
 
+be reminded this module requires `python3-dev` to compile C++ code, e.g. on Ubuntu run:
+
+`apt install python3-dev`
+
 this module is available on pip
 
 `pip install spatial-correlation-sampler`
