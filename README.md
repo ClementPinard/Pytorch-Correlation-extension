@@ -17,6 +17,11 @@ This [tutorial](http://pytorch.org/tutorials/advanced/cpp_extension.html) was us
 
 This module is expected to compile for Pytorch `1.6`.
 
+Before installation please check compatibility of your GPU and CUDA (_Compute Capability_) [nvidia docs](https://developer.nvidia.com/cuda-gpus). 
+e.g RTX 6000 is using CC=8.9 so we are setting the environment variable to
+
+`export TORCH_CUDA_ARCH_LIST="8.9+PTX"`
+
 # Installation
 
 be reminded this module requires `python3-dev` to compile C++ code, e.g. on Ubuntu run:
