@@ -8,7 +8,7 @@ project_root = 'Correlation_Module'
 
 source_files = ['correlation.cpp', 'correlation_sampler.cpp']
 
-cxx_args = ['-std=c++14', '-fopenmp']
+cxx_args = ['-std=c++17', '-fopenmp']
 
 def generate_nvcc_args(gpu_archs):
     nvcc_args = []
