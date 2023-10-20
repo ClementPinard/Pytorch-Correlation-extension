@@ -15,7 +15,7 @@ This [tutorial](http://pytorch.org/tutorials/advanced/cpp_extension.html) was us
 
 # Requirements
 
-This module is expected to compile for Pytorch `1.6`.
+This module is expected to compile for Pytorch `2.1.0`.
 
 Before installation please check compatibility of your GPU and CUDA (_Compute Capability_) [nvidia docs](https://developer.nvidia.com/cuda-gpus). 
 e.g RTX 6000 is using CC=8.9 so we are setting the environment variable to
