@@ -24,7 +24,7 @@ parser.add_argument('-p', '--pad', type=int, default=1)
 parser.add_argument('--scale', choices=['s', 'ms', 'us'], default='us')
 parser.add_argument('-r', '--runs', type=int, default=100)
 parser.add_argument('--dilation', type=int, default=2)
-parser.add_argument('-d', '--dtype', choices=['half', 'float', 'double'])
+parser.add_argument('-d', '--dtype', choices=['half', 'bfloat', 'float', 'double'])
 
 args = parser.parse_args()
 
@@ -32,6 +32,8 @@ device = torch.device(args.backend)
 
 if args.dtype == 'half':
     dtype = torch.float16
+elif args.dtype == 'bfloat':
+    dtype = torch.bfloat16
 elif args.dtype == 'float':
     dtype = torch.float32
 else:
