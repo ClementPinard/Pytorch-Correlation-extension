@@ -36,9 +36,9 @@ def launch_setup():
 
     setup(
         name='spatial_correlation_sampler',
-        version="0.4.0",
+        version="0.5.0",
         author="Clément Pinard",
-        author_email="clement.pinard@ensta-paristech.fr",
+        author_email="mail@clementpinard.fr",
         description="Correlation module for pytorch",
         long_description=long_description,
         long_description_content_type="text/markdown",
