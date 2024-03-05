@@ -259,7 +259,7 @@ torch::Tensor correlation_cuda_forward(
   const int threads = THREADS_FORWARD;
   const dim3 blocks(batch_size, oH, oW);
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input1.scalar_type(), "correlation_forward_cuda", ([&] {
+  AT_DISPATCH_FLOATING_TYPES_AND2(at::ScalarType::Half, at::ScalarType::BFloat16, input1.scalar_type(), "correlation_forward_cuda", ([&] {
     TensorAcc4R trInput1_acc  = trInput1.packed_accessor32<scalar_t,4,RestrictPtrTraits>();
     TensorAcc4R trInput2_acc = trInput2.packed_accessor32<scalar_t,4,RestrictPtrTraits>();
     TensorAcc5R output_acc = output.packed_accessor32<scalar_t,5,RestrictPtrTraits>();
@@ -294,7 +294,7 @@ std::vector<torch::Tensor> correlation_cuda_backward(
   const dim3 blocks(C, iH, iW);
   const dim3 threads(THREADS_BACKWARD, THREADS_BACKWARD);
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input1.scalar_type(), "correlation_backward_cuda", ([&] {
+  AT_DISPATCH_FLOATING_TYPES_AND2(at::ScalarType::Half, at::ScalarType::BFloat16, input1.scalar_type(), "correlation_backward_cuda", ([&] {
     TensorAcc4R input1_acc = input1.packed_accessor32<scalar_t,4,RestrictPtrTraits>();
     TensorAcc4R input2_acc = input2.packed_accessor32<scalar_t,4,RestrictPtrTraits>();
     TensorAcc4R gradInput1_acc = gradInput1.packed_accessor32<scalar_t,4,RestrictPtrTraits>();
