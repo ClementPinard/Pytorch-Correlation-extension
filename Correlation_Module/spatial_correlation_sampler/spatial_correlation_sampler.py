@@ -74,7 +74,7 @@ class SpatialCorrelationSamplerFunction(Function):
     @staticmethod
     @once_differentiable
     def backward(ctx, grad_output):
-        input1, input2 = ctx.saved_variables
+        input1, input2 = ctx.saved_tensors
 
         kH, kW = ctx.kernel_size
         patchH, patchW = ctx.patch_size
