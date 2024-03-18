@@ -68,7 +68,7 @@ dilation_patch=2
 ## Example
 ```python
 import torch
-from spatial_correlation_sampler import SpatialCorrelationSampler, 
+from spatial_correlation_sampler import SpatialCorrelationSampler, spatial_correlation_sample
 
 device = "cuda"
 batch_size = 1
