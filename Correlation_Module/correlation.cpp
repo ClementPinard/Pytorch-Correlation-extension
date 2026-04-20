@@ -5,6 +5,7 @@ using namespace torch;
 
 #define WITHIN_BOUNDS(x, y, H, W) (x >= 0 && x < H && y >= 0 && y < W)
 
+
 template <typename scalar_t>
 static void correlate_patch(
     TensorAccessor<scalar_t,3> input1,
@@ -95,31 +96,38 @@ torch::Tensor correlation_cpp_forward(
   auto output = at::zeros({batch_size, patchH, patchW, oH, oW}, input1.options());
 
   int n, ph, pw, h, w;
+AT_DISPATCH_FLOATING_TYPES(input1.scalar_type(), "correlation_forward_cpp", ([&] {
+
+  auto input1_acc = input1.accessor<scalar_t, 4>();
+  auto input2_acc = input2.accessor<scalar_t, 4>();
+  auto output_acc = output.accessor<scalar_t, 5>();
+
   #pragma omp parallel for private(n, ph, pw, h, w) collapse(2)
-    for (n = 0; n < batch_size; ++n) {
-      for(ph = 0; ph < patchH; ++ph){
-        for(pw = 0; pw < patchW; ++pw){
-          AT_DISPATCH_FLOATING_TYPES(input1.scalar_type(), "correlation_forward_cpp", ([&] {
-            auto input1_acc = input1.accessor<scalar_t, 4>();
-            auto input2_acc = input2.accessor<scalar_t, 4>();
-            auto output_acc = output.accessor<scalar_t, 5>();
-            for (h = 0; h < oH; ++h) {
-              for (w = 0; w < oW; ++w) {
-                correlate_patch(input1_acc[n],
-                                input2_acc[n],
-                                &output_acc[n][ph][pw][h][w],
-                                kH, kW,
-                                dilationH, dilationW,
-                                -padH + h * dH,
-                                -padW + w * dW,
-                                (ph - patchRadH)  * dilation_patchH,
-                                (pw - patchRadW)  * dilation_patchW);
-              }
-            }
-          }));
+  for (n = 0; n < batch_size; ++n) {
+    for(ph = 0; ph < patchH; ++ph){
+      for(pw = 0; pw < patchW; ++pw){
+        for (h = 0; h < oH; ++h) {
+          for (w = 0; w < oW; ++w) {
+
+            correlate_patch(
+              input1_acc[n],
+              input2_acc[n],
+              &output_acc[n][ph][pw][h][w],
+              kH, kW,
+              dilationH, dilationW,
+              -padH + h * dH,
+              -padW + w * dW,
+              (ph - patchRadH) * dilation_patchH,
+              (pw - patchRadW) * dilation_patchW
+            );
+
+          }
         }
       }
     }
+  }
+
+}));
   return output;
 }
 
@@ -133,27 +141,26 @@ std::vector<torch::Tensor> correlation_cpp_backward(
     int dilationH, int dilationW,
     int dilation_patchH, int dilation_patchW,
     int dH, int dW) {
-  
+
   const int batch_size = input1.size(0);
   const int patchRadH = (patchH - 1) / 2;
   const int patchRadW = (patchW - 1) / 2;
   const int oH = gradOutput.size(3);
   const int oW = gradOutput.size(4);
-  
+
   auto gradInput1 = torch::zeros_like(input1);
 
   auto gradInput2 = torch::zeros_like(input2);
 
   int n, ph, pw, h, w;
+AT_DISPATCH_FLOATING_TYPES(input1.scalar_type(), "correlation_backward_cpp", ([&] {
+  auto input1_acc = input1.accessor<scalar_t, 4>();
+  auto gradInput1_acc = gradInput1.accessor<scalar_t, 4>();
+  auto input2_acc = input2.accessor<scalar_t, 4>();
+  auto gradInput2_acc = gradInput2.accessor<scalar_t, 4>();
+  auto gradOutput_acc = gradOutput.accessor<scalar_t, 5>();
   #pragma omp parallel for private(n, ph, pw, h, w)
     for (n = 0; n < batch_size; ++n) {
-      AT_DISPATCH_FLOATING_TYPES(input1.scalar_type(), "correlation_backward_cpp", ([&] {
-        auto input1_acc = input1.accessor<scalar_t, 4>();
-        auto gradInput1_acc = gradInput1.accessor<scalar_t, 4>();
-        auto input2_acc = input2.accessor<scalar_t, 4>();
-        auto gradInput2_acc = gradInput2.accessor<scalar_t, 4>();
-        auto gradOutput_acc = gradOutput.accessor<scalar_t, 5>();
-
         for(ph = 0; ph < patchH; ++ph){
           for(pw = 0; pw < patchW; ++pw){
             for (h = 0; h < oH; ++h) {
@@ -171,8 +178,7 @@ std::vector<torch::Tensor> correlation_cpp_backward(
             }
           }
         }
-      }));
-    }
-
+      }
+    }));
   return {gradInput1, gradInput2};
 }
